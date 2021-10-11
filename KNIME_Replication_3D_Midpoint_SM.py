@@ -108,21 +108,6 @@ if __name__ == "__main__":
     logits = Encoder.forward(image_batch)
     logits_array = logits.numpy()
 
-    '''
-    #Construcción de la media red
-    model_AE = tf.keras.Sequential(name='Autoencoder')
-    for i in range(4):
-        aux_layer = model.nn_model.get_layer(index=i)
-        model_AE.add(aux_layer)
-
-    image_batch, label_batch = mli.get_batch(x_validation, y_validation, 17500)
-    input_images = tf.cast(image_batch, tf.float32)
-    input_images = tf.reshape(input_images, [input_images.shape[0], -1])
-    input_images = input_images / 255.0
-    # Feed forward de la red
-    logits = model_AE(input_images)
-    logits_array = logits.numpy()
-    '''
     colors = ['#33a02c', '#e31a1c', '#b15928', '#6a3d9a', '#1f78b4',
               '#ff7f00', '#b2df8a', '#fdbf6f', '#fb9a99', '#cab2d6']
 
@@ -139,6 +124,7 @@ if __name__ == "__main__":
                             legend="full",
                             palette=colors);
         plt.legend(bbox_to_anchor=(1.01, 1),borderaxespad=0)
+        plt.title(f'Scatter Latent Space 2D. Python Dense Midpoint\n784 - {sizes}')
         plt.tight_layout()
         plt.show()
 
@@ -156,6 +142,10 @@ if __name__ == "__main__":
                    marker='o',
                    s=5)
         plt.legend(*sc.legend_elements(), bbox_to_anchor=(1.05, 1), loc=2)
+        plt.title(f'Scatter Latent Space 3D. Python Dense Midpoint\n784 - {sizes}')
+        ax.set_xlabel(labeled_images["X"].name)
+        ax.set_ylabel(labeled_images["Y"].name)
+        ax.set_zlabel(labeled_images["Z"].name)
         plt.show()
 
     print("\033[1;32m \nWill execute TensorBoard for the last training...")

@@ -35,7 +35,7 @@ x_train,x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=0
 
 # Función de entrenamiento
 def run_training_enc(model_inst: mli.ModelGr, sub_folder: str, iterations: int = 2500,
-                 batch_size: int = 32, log_freq: int = 200, lim_accuracy: float = 0.99,
+                 batch_size: int = 32, log_freq: int = 200,
                  lim_loss: float = 0.05, graph_name: str = None):
 
     # Directorio para almacenar datos
@@ -61,15 +61,15 @@ def run_training_enc(model_inst: mli.ModelGr, sub_folder: str, iterations: int =
         if j % log_freq == 0:
             max_idxs = tf.argmax(logits, axis=1)
             # El resultado de lo anterior e un tensor... Por eso necesitamos hacer un numpy()
-            acc = np.sum(max_idxs.numpy() == label_batch.numpy()) / len(label_batch.numpy())
-            print(f"Iter: {j}, loss={loss:.3f}, accuracy={acc * 100:.3f}%  (Scenario {graph_name})")
+            #acc = np.sum(max_idxs.numpy() == label_batch.numpy()) / len(label_batch.numpy())
+            print(f"Iter: {j}, loss={loss:.3f}, (Scenario {graph_name})")
             with train_writer.as_default():
                 tf.summary.scalar('loss', loss, step=j)
-                tf.summary.scalar('accuracy', acc, step=j)
+                #tf.summary.scalar('accuracy', acc, step=j)
                 # log the gradients
             model_inst.log_gradients(gradients, train_writer, j)
-        if acc >= lim_accuracy and loss <= lim_loss:
-            print(f'\033[1;31m \nEnd for limit in Accuracy={acc*100:.3f}% and Loss={loss:.3f} \033[0;0m')
+        if loss <= lim_loss:
+            print(f'\033[1;31m \nEnd for limit Loss={loss:.3f} \033[0;0m')
             break
 
 
@@ -85,7 +85,7 @@ if __name__ == "__main__":
                      tf.nn.tanh,
                      tf.nn.tanh,
                      tf.nn.tanh]
-    sizes = [300, 48, 3, 48, 300, 784]
+    sizes = [300, 48, 2, 48, 300, 784]
     subfolder_name = "Autoencoder"
 
     # Construcción de las subfolders
@@ -98,9 +98,8 @@ if __name__ == "__main__":
     model = mli.ModelGr(activations=act_functions, sizes=sizes,
                             num_layers=num_layers, name="Autoencoder")
 
-    run_training_enc(model, sub_folder=subfolder_name, iterations=3500,
-                     lim_accuracy=0.99, lim_loss=0.05,
-                     graph_name="Autoencoder", batch_size= 300)
+    run_training_enc(model, sub_folder=subfolder_name, iterations=3500, lim_loss=0.01,
+                     graph_name="Autoencoder", batch_size=300)
 
     #Construcción de la media red
     image_batch, label_batch = mli.get_batch(x_validation, y_validation, 17500)
@@ -125,6 +124,9 @@ if __name__ == "__main__":
                             legend="full",
                             palette=colors);
         plt.legend(bbox_to_anchor=(1.01, 1),borderaxespad=0)
+        plt.title(f'Scatter Latent Space 2D. Python Autoencoder\n784 - {sizes}')
+        plt.xlabel("X")
+        plt.ylabel("Y")
         plt.tight_layout()
         plt.show()
 
@@ -142,6 +144,10 @@ if __name__ == "__main__":
                    marker='o',
                    s=5)
         plt.legend(*sc.legend_elements(), bbox_to_anchor=(1.05, 1), loc=2)
+        plt.title(f'Scatter Latent Space 3D. Python Autoencoder\n784 - {sizes}')
+        ax.set_xlabel(labeled_images["X"].name)
+        ax.set_ylabel(labeled_images["Y"].name)
+        ax.set_zlabel(labeled_images["Z"].name)
         plt.show()
 
     print("\033[1;32m \nWill execute TensorBoard for the last training...")

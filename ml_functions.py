@@ -9,10 +9,9 @@ def get_batch(x_data, y_data, batch_size):
     idxs = np.random.randint(0, len(y_data), batch_size)
     return x_data[idxs, :, :], y_data[idxs]
 
-#Definición de CLASE Sencilla
+# Definición de CLASE Sencilla
 # Definición de la clase. En la clase se define un objeto y las funciones que le aplican
 # así como las estructuras de datos.
-
 class Model(object):
     # Dentro de la clase, se define la función __init__ que sirve en el momento de la instanciación.
     def __init__(self, activation, num_layers=6, hidden_size=10, outer_size=10, name=None):
@@ -66,10 +65,8 @@ class Model(object):
 
 # Fin CLASE
 
-
-#Clase de Modelo Genérico
-#Definición de clase general con vector de entrada dense para las layers
-
+# Clase de Modelo Genérico
+#D efinición de clase general con vector de entrada dense para las layers
 class ModelGr(object):
     # Dentro de la clase, se define la función __init__ que sirve en el momento de la instanciación.
     def __init__(self, activations, sizes, num_layers=6, name=None):
@@ -146,8 +143,7 @@ class ModelGr(object):
 
 # Fin CLASE
 
-#Clase para la creación de un Encoder desde un Sequential (Supuesto AENC)
-
+# Clase para la creación de un Encoder desde un Sequential (Supuesto AENC)
 class Encoder(object):
 
     def __init__(self, SeqModel: ModelGr):
@@ -165,4 +161,8 @@ class Encoder(object):
         # Ahora viene el paso de la red. Llamamos al modelo de la función __init__
         logits = self.nn_model(input_images)
         return logits
+
+#FIN CLASE
+
+
 

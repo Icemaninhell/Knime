@@ -32,10 +32,9 @@ if n == 2:
 
 print(f"Latent space dimension: {l_space}\033[0;0m")
 
-
 # Obtención de Dataset
 
-STORE_PATH = f"/home/isra/PycharmProjects/CodingTensorFlowV2/StoredResults/KNIME/3D_Midpoint/{dt.datetime.now().strftime('%d%m%Y%H%M')}"
+STORE_PATH = f"/home/isra/PycharmProjects/CodingTensorFlowV2/StoredResults/KNIME/3D_Midpoint_DM/{dt.datetime.now().strftime('%d%m%Y%H%M')}"
 
 mnist = fetch_openml('mnist_784', version=1, as_frame=True)
 
@@ -55,7 +54,7 @@ x_train,x_test, y_train, y_test = train_test_split(x_train, y_train, test_size=0
 
 # Función de entrenamiento
 def run_training_enc(model_inst: mli.ModelGr, sub_folder: str, iterations: int = 2500,
-                 batch_size: int = 32, log_freq: int = 200,
+                 batch_size: int = 32, log_freq: int = 200, lim_accuracy: float = 0.99,
                  lim_loss: float = 0.05, graph_name: str = None):
 
     # Directorio para almacenar datos
@@ -74,22 +73,22 @@ def run_training_enc(model_inst: mli.ModelGr, sub_folder: str, iterations: int =
         # Calculamos los logits y la perdida
         with tf.GradientTape() as tape:
             logits = model_inst.forward(image_batch)
-            loss = model_inst.RMSE_loss(logits, image_batch)
+            loss = model_inst.loss(logits, label_batch)
         gradients = tape.gradient(loss, model_inst.nn_model.trainable_variables)
         optimizer.apply_gradients(zip(gradients, model_inst.nn_model.trainable_variables))
         # Zona de Logs
         if j % log_freq == 0:
             max_idxs = tf.argmax(logits, axis=1)
             # El resultado de lo anterior e un tensor... Por eso necesitamos hacer un numpy()
-            #acc = np.sum(max_idxs.numpy() == label_batch.numpy()) / len(label_batch.numpy())
-            print(f"Iter: {j}, loss={loss:.3f}, (Scenario {graph_name})")
+            acc = np.sum(max_idxs.numpy() == label_batch.numpy()) / len(label_batch.numpy())
+            print(f"Iter: {j}, loss={loss:.3f}, accuracy={acc * 100:.3f}%  (Scenario {graph_name})")
             with train_writer.as_default():
                 tf.summary.scalar('loss', loss, step=j)
-                #tf.summary.scalar('accuracy', acc, step=j)
+                tf.summary.scalar('accuracy', acc, step=j)
                 # log the gradients
             model_inst.log_gradients(gradients, train_writer, j)
-        if loss <= lim_loss:
-            print(f'\033[1;31m \nEnd for limit Loss={loss:.3f} \033[0;0m')
+        if acc >= lim_accuracy and loss <= lim_loss:
+            print(f'\033[1;31m \nEnd for limit in Accuracy={acc*100:.3f}% and Loss={loss:.3f} \033[0;0m')
             break
 
 
@@ -99,13 +98,12 @@ if __name__ == "__main__":
     #act_funcs = [tf.sigmoid, tf.nn.relu, tf.nn.leaky_relu, tf.nn.tanh, tf.nn.softplus, tf.nn.softsign]
 
     num_layers = 6
-    act_functions = [tf.nn.tanh,
-                     tf.nn.tanh,
-                     tf.nn.tanh,
-                     tf.nn.tanh,
-                     tf.nn.tanh,
-                     tf.nn.tanh]
-    sizes = [300, 48, l_space, 48, 300, 784]
+    act_functions = [tf.nn.softsign,
+                     tf.nn.softsign,
+                     tf.nn.softsign,
+                     tf.nn.softsign,
+                     tf.nn.softsign]
+    sizes = [300, 100, 10, l_space, 10, 10]
     subfolder_name = "Autoencoder"
 
     # Construcción de las subfolders
@@ -118,8 +116,9 @@ if __name__ == "__main__":
     model = mli.ModelGr(activations=act_functions, sizes=sizes,
                             num_layers=num_layers, name="Autoencoder")
 
-    run_training_enc(model, sub_folder=subfolder_name, iterations=5500, lim_loss=0.01,
-                     graph_name="Autoencoder", batch_size=300)
+    run_training_enc(model, sub_folder=subfolder_name, iterations=3500,
+                     lim_accuracy=0.99, lim_loss=0.05,
+                     graph_name="Dense model", batch_size= 300)
 
     #Construcción de la media red
     image_batch, label_batch = mli.get_batch(x_validation, y_validation, 17500)
@@ -129,7 +128,7 @@ if __name__ == "__main__":
     logits_array = logits.numpy()
 
     colors = ['#33a02c', '#e31a1c', '#b15928', '#6a3d9a', '#1f78b4',
-              '#ff7f00', '#b2df8a', '#fdbf6f', '#fb9a99','#cab2d6']
+              '#ff7f00', '#b2df8a', '#fdbf6f', '#fb9a99', '#cab2d6']
 
     if min(sizes) == 2:
 
@@ -144,9 +143,7 @@ if __name__ == "__main__":
                             legend="full",
                             palette=colors);
         plt.legend(bbox_to_anchor=(1.01, 1),borderaxespad=0)
-        plt.title(f'Scatter Latent Space 2D. Python Autoencoder\n784 - {sizes}')
-        plt.xlabel("X")
-        plt.ylabel("Y")
+        plt.title(f'Scatter Latent Space 2D. Python Dense Midpoint\n784 - {sizes}')
         plt.tight_layout()
         plt.show()
 
@@ -164,7 +161,7 @@ if __name__ == "__main__":
                    marker='o',
                    s=5)
         plt.legend(*sc.legend_elements(), bbox_to_anchor=(1.05, 1), loc=2)
-        plt.title(f'Scatter Latent Space 3D. Python Autoencoder\n784 - {sizes}')
+        plt.title(f'Scatter Latent Space 3D. Python Dense Midpoint\n784 - {sizes}')
         ax.set_xlabel(labeled_images["X"].name)
         ax.set_ylabel(labeled_images["Y"].name)
         ax.set_zlabel(labeled_images["Z"].name)

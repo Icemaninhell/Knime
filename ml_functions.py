@@ -66,7 +66,7 @@ class Model(object):
 # Fin CLASE
 
 # Clase de Modelo Genérico
-#D efinición de clase general con vector de entrada dense para las layers
+#Definición de clase general con vector de entrada dense para las layers
 class ModelGr(object):
     # Dentro de la clase, se define la función __init__ que sirve en el momento de la instanciación.
     def __init__(self, activations, sizes, num_layers=6, name=None):
@@ -107,16 +107,32 @@ class ModelGr(object):
         loss = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=labels))
         return loss
 
-    # Función de pérdidas RMSE
+    # Función de pérdidas RMSE.
     @staticmethod
     def RMSE_loss(ypred, ylabel):
         ylabel = tf.cast(ylabel, tf.float32)
         ylabel = tf.reshape(ylabel, [ylabel.shape[0], -1])
         ylabel = ylabel / 255.0
 
-        loss = tf.reduce_mean(tf.square(ypred - ylabel))
+        #loss = tf.reduce_mean(tf.square(ypred - ylabel))
+        mse = tf.keras.losses.MeanSquaredError()
+        loss = mse(ypred, ylabel)
 
         return loss
+
+    # Función de pérdidas LMSE
+    @staticmethod
+    def LMSE_loss(ypred, ylabel):
+        ylabel = tf.cast(ylabel, tf.float32)
+        ylabel = tf.reshape(ylabel, [ylabel.shape[0], -1])
+        ylabel = ylabel / 255.0
+
+        #loss = tf.reduce_mean(tf.square(ypred - ylabel))
+        mse = tf.keras.losses.MeanSquaredLogarithmicError()
+        loss = mse(ypred, ylabel)
+
+        return loss
+
 
     def log_gradients(self, gradients, train_writer, step):
         # La siguiente línea es una función de prevención. Verificamos que se

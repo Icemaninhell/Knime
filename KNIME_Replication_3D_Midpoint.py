@@ -30,8 +30,9 @@ if n == 1:
 if n == 2:
     l_space = int(sys.argv[1])
 
-print(f"Latent space dimension: {l_space}\033[0;0m")
+assert l_space <= 3, "Dimension should be 2 or 3"
 
+print(f"Latent space dimension: {l_space}\033[0;0m")
 
 # Obtención de Dataset
 
@@ -39,12 +40,12 @@ STORE_PATH = f"/home/isra/PycharmProjects/CodingTensorFlowV2/StoredResults/KNIME
 
 mnist = fetch_openml('mnist_784', version=1, as_frame=True)
 
-df_data=mnist.data.iloc[:]
+df_data = mnist.data.iloc[:]
 df_data = df_data.assign(digit_class=mnist.target.iloc[:].astype(int))
-np_data=df_data.to_numpy()
+np_data = df_data.to_numpy()
 np_data_images = np_data[:, 0:784]
-np_data_images=np.reshape(np_data_images, (70000, 28, 28))
-np_data_labels = np_data [:, 784]
+np_data_images = np.reshape(np_data_images, (70000, 28, 28))
+np_data_labels = np_data[:, 784]
 
 #Separación en entrenamiento y tests
 
@@ -64,6 +65,7 @@ def run_training_enc(model_inst: mli.ModelGr, sub_folder: str, iterations: int =
     model_inst.plot_computational_graph(train_writer, x_train[:batch_size, :, :], graph_name)
     # Selección del optimizador
     optimizer = tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, amsgrad=False)  # Puede tener un argumento de learning rate
+    #optimizer = tf.keras.optimizers.Adamax(learning_rate=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08)  # Puede tener un argumento de learning rate
     # Vamos a la iteración de entrenamiento
     acc = 0
     for j in range(iterations):
@@ -116,18 +118,20 @@ if __name__ == "__main__":
 
     print(f"\033[1;32m  Running training: \033[0;0m")
     model = mli.ModelGr(activations=act_functions, sizes=sizes,
-                            num_layers=num_layers, name="Autoencoder")
+                            num_layers=num_layers, name=subfolder_name)
 
-    run_training_enc(model, sub_folder=subfolder_name, iterations=5500, lim_loss=0.01,
-                     graph_name="Autoencoder", batch_size=300)
+    run_training_enc(model, sub_folder=subfolder_name, iterations=5500, lim_loss=0.035,
+                     graph_name=subfolder_name, batch_size=300)
 
     #Construcción de la media red
     image_batch, label_batch = mli.get_batch(x_validation, y_validation, 17500)
+    label_batch = tf.cast(tf.Variable(label_batch), tf.int32)
     Encoder = mli.Encoder(model)
     #Forwarde de la media red
     logits = Encoder.forward(image_batch)
     logits_array = logits.numpy()
 
+    #Color Codes
     colors = ['#33a02c', '#e31a1c', '#b15928', '#6a3d9a', '#1f78b4',
               '#ff7f00', '#b2df8a', '#fdbf6f', '#fb9a99','#cab2d6']
 
